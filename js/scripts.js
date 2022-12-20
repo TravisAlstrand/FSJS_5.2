@@ -1,4 +1,5 @@
-const apiURL = 'https://randomuser.me/api/?results=12&nat=us&exc=gender,login,registered,phone,nat';
+const apiURL = 'https://randomuser.me/api/?results=12&nat=us&exc=gender,login,registered,phone,nat,id';
+const body = document.querySelector('body');
 const gallery = document.querySelector('#gallery');
 let employees;
 
@@ -8,7 +9,6 @@ const getUsers = async () => {
     .then(response => response.json())
     .then(data => employees = data.results)
     .catch((err) => console.log(err));
-  console.log(employees); // ERASE WHEN DONE! ~~~~~~~~~~~~~~~~~~~~~~
   displayEmployees();
 };
 
@@ -17,10 +17,10 @@ getUsers();
 
 // DISPLAY EMPLOYEE CARDS
 const displayEmployees = () => {
-  employees.forEach(employee => {
+  employees.forEach((employee, index) => {
     const fullName = `${employee.name.first} ${employee.name.last}`;
-    let html = `
-      <div class="card">
+    const html = `
+      <div class="card" data-index="${index}">
         <div class="card-img-container">
             <img class="card-img" src="${employee.picture.large}" alt="photo of ${fullName}">
         </div>
@@ -34,3 +34,81 @@ const displayEmployees = () => {
     gallery.insertAdjacentHTML('beforeend', html);
   });
 };
+
+// CLEAN DOB
+const cleanDOB = (dateStr) => {
+  const month = dateStr.substring(5, 7);
+  const day = dateStr.substring(8, 10);
+  const year = dateStr.substring(0, 4);
+  const dob = `${month}/${day}/${year}`;
+  return dob;
+}; 
+
+// CREATE MODAL
+const displayModal = (index) => {
+  const employee = employees[index];
+  const fullName = `${employee.name.first} ${employee.name.last}`;
+  const dob = cleanDOB(employee.dob.date);
+  const html = `
+    <div class="modal-container">
+      <div class="modal">
+        <button type="button" id="modal-close-btn" class="modal-close-btn"><strong>X</strong></button>
+        <div class="modal-info-container">
+          <img class="modal-img" src="${employee.picture.large}" alt="Photo of ${fullName}">
+          <h3 id="name" class="modal-name cap">${fullName}</h3>
+          <p class="modal-text">${employee.email}</p>
+          <p class="modal-text cap">${employee.location.city}</p>
+          <hr>
+          <p class="modal-text">${employee.cell}</p>
+          <p class="modal-text">${employee.location.street.number} ${employee.location.street.name}, ${employee.location.city}, ${employee.location.state} ${employee.location.postcode}</p>
+          <p class="modal-text">Birthday: ${dob}</p>
+        </div>
+      </div>
+      <div class="modal-btn-container">
+        <button type="button" id="modal-prev" class="modal-prev btn">Prev</button>
+        <button type="button" id="modal-next" class="modal-next btn">Next</button>
+      </div>
+    </div>
+  `;
+  body.insertAdjacentHTML('beforeend', html);
+
+  // LISTEN ON OPEN MODAL
+  const modal = document.querySelector('.modal-container');
+  modal.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal-close-btn') || e.target.tagName === 'STRONG') {
+      body.removeChild(body.lastElementChild);
+    } else if (e.target.classList.contains('modal-prev')) {
+      modalSwitch(index, 'prev');
+    } else if (e.target.classList.contains('modal-next')) {
+      modalSwitch(index, 'next');
+    };
+  });
+};
+
+// SWITCH MODALS
+const modalSwitch = (index, direction) => {
+  body.removeChild(body.lastElementChild);
+  if (direction === 'prev') {
+    if (index === 0) {
+      index = employees.length - 1;
+    } else {
+      index--;
+    };
+  } else {
+    if (index === employees.length - 1) {
+      index = 0;
+    } else {
+      index++;
+    };
+  };
+  displayModal(index);
+};
+
+// LISTEN TO OPEN MODALS
+gallery.addEventListener('click', (e) => {
+  if (e.target.closest('.card')) {
+    const card = e.target.closest('.card');
+    const index = card.getAttribute(['data-index']);
+    displayModal(index);
+  };
+});
