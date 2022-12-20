@@ -1,5 +1,6 @@
 const apiURL = 'https://randomuser.me/api/?results=12&nat=us&exc=gender,login,registered,phone,nat,id';
 const body = document.querySelector('body');
+const searchContainer = document.querySelector('.search-container');
 const gallery = document.querySelector('#gallery');
 let employees;
 
@@ -9,15 +10,26 @@ const getUsers = async () => {
     .then(response => response.json())
     .then(data => employees = data.results)
     .catch((err) => console.log(err));
-  displayEmployees();
+  displayEmployees(employees);
 };
 
 // INITIALIZE ON PAGE LOAD
 getUsers();
 
+// APPEND SEARCH BAR
+const searchBarHtml = `
+  <form action="#" method="get">
+    <input type="search" id="search-input" class="search-input" placeholder="Search...">
+    <input type="submit" value="&#x1F50D;" id="search-submit" class="search-submit">
+  </form>
+`;
+
+searchContainer.insertAdjacentHTML('afterbegin', searchBarHtml);
+
 // DISPLAY EMPLOYEE CARDS
-const displayEmployees = () => {
-  employees.forEach((employee, index) => {
+const displayEmployees = (array) => {
+  gallery.innerHTML = '';
+  array.forEach((employee, index) => {
     const fullName = `${employee.name.first} ${employee.name.last}`;
     const html = `
       <div class="card" data-index="${index}">
@@ -111,4 +123,25 @@ gallery.addEventListener('click', (e) => {
     const index = card.getAttribute(['data-index']);
     displayModal(index);
   };
+});
+
+// LISTEN TO SEARCH
+const searchBar = document.querySelector('#search-input');
+searchBar.addEventListener('keyup', () => {
+  const input = searchBar.value.toLowerCase();
+  let filteredEmployees = [];
+  employees.forEach(employee => {
+    const fullName = `${employee.name.first.toLowerCase()} ${employee.name.last.toLowerCase()}`;
+    if (fullName.includes(input)) {
+      filteredEmployees.push(employee);
+    };
+  });
+  if (input === '') {
+    displayEmployees(employees);
+  };
+  if (input && filteredEmployees.length > 0) {
+    displayEmployees(filteredEmployees);
+  } else if (input && filteredEmployees.length <= 0) {
+    gallery.innerHTML = `<h2>No Results Found`;
+  }
 });
